@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"testing"
-
-	"io/ioutil"
 
 	"github.com/dolmen-go/hexenc"
 )
@@ -75,25 +74,31 @@ func TestDecoder(t *testing.T) {
 		hexData := buf.Bytes()
 
 		dec := hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
-		b, err := ioutil.ReadAll(dec)
-		if err != nil {
-			t.Errorf("Read error: %s", err)
-			continue
-		}
-		if !bytes.Equal(b, data) {
-			t.Errorf("Decode failure: %x != %x", b, data)
-			continue
-		}
-
-		dec = hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
-		b = make([]byte, len(data))
+		b := make([]byte, len(data))
 		n, err = dec.Read(b)
 		if err != nil && err != io.EOF {
 			t.Errorf("Read error: %s", err)
 			continue
 		}
-		if !bytes.Equal(b, data) {
+		if n != len(data) || !bytes.Equal(b, data) {
 			t.Errorf("Decode failure: %x != %x", b, data)
+			continue
+		}
+
+		checkReadAll := func(decoder io.Reader) error {
+			b, err := ioutil.ReadAll(decoder)
+			if err != nil {
+				return fmt.Errorf("Read error: %s", err)
+			}
+			if !bytes.Equal(b, data) {
+				return fmt.Errorf("Decode failure: %x != %x", b, data)
+			}
+			return nil
+		}
+
+		dec = hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
+		if err := checkReadAll(dec); err != nil {
+			t.Error(err)
 			continue
 		}
 
@@ -101,25 +106,15 @@ func TestDecoder(t *testing.T) {
 			// Feed decoder with incomplete chunks
 			t.Logf("Feed decoder by chunks %v", test.sizes)
 			dec = hexenc.Encoding{}.NewDecoder(NewChunkedReader(bytes.NewReader(hexData), test.sizes))
-			b, err = ioutil.ReadAll(dec)
-			if err != nil {
-				t.Errorf("Read error: %s", err)
-				continue
-			}
-			if !bytes.Equal(b, data) {
-				t.Errorf("Decode failure: %x != %x", b, data)
+			if err := checkReadAll(dec); err != nil {
+				t.Error(err)
 				continue
 			}
 
 			t.Logf("Read from decoder by chunks %v", test.sizes)
 			dec = hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
-			b, err = ioutil.ReadAll(NewChunkedReader(dec, test.sizes))
-			if err != nil {
-				t.Errorf("Read error: %s", err)
-				continue
-			}
-			if !bytes.Equal(b, data) {
-				t.Errorf("Decode failure: %x != %x", buf.Bytes(), data)
+			if err := checkReadAll(NewChunkedReader(dec, test.sizes)); err != nil {
+				t.Error(err)
 				continue
 			}
 		}
