@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"io/ioutil"
+
 	"github.com/dolmen-go/hexenc"
 )
 
@@ -120,7 +122,31 @@ func TestDecoder(t *testing.T) {
 		hexData := buf.Bytes()
 
 		dec := hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
+		b, err := ioutil.ReadAll(dec)
+		if err != nil {
+			t.Errorf("Read error: %s", err)
+			continue
+		}
+		if !bytes.Equal(b, data) {
+			t.Errorf("Decode failure: %x != %x", b, data)
+			continue
+		}
 
+		if test.sizes != nil {
+			// Feed decoder with incomplete chunks
+			dec = hexenc.Encoding{}.NewDecoder(NewChunkedReader(bytes.NewReader(hexData), test.sizes))
+			b, err = ioutil.ReadAll(dec)
+			if err != nil {
+				t.Errorf("Read error: %s", err)
+				continue
+			}
+			if !bytes.Equal(b, data) {
+				t.Errorf("Decode failure: %x != %x", b, data)
+				continue
+			}
+		}
+
+		dec = hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
 		buf = &bytes.Buffer{}
 		t.Logf("Read by chunks %v", test.sizes)
 		err = readAllByChunks(io.TeeReader(dec, buf), len(data), test.sizes)

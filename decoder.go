@@ -70,12 +70,12 @@ func (d *decoder) Read(p []byte) (n int, err error) {
 		remaining = nn & 1
 		if remaining == 1 {
 			b = buf[nn-1]
-			buf = buf[:nn&^1]
+			nn = nn &^ 1
 		}
 
 		if nn > 1 {
 			var m int
-			m, d.err = hex.Decode(p, buf)
+			m, d.err = hex.Decode(p, buf[:nn])
 			n += m
 			if d.err != nil {
 				return n, d.err
