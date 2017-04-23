@@ -36,6 +36,14 @@ func readAllByChunks(r io.Reader, expected int, chunks []int) error {
 			if expected != 0 {
 				return fmt.Errorf("EOF but expecting %d more bytes", expected)
 			}
+			// Try again: this should give the same error
+			n, err := r.Read(b)
+			if err != io.EOF {
+				return fmt.Errorf("Got EOF once, but not twice: %v", err)
+			}
+			if n != 0 {
+				return fmt.Errorf("After EOF n should be 0 but is %d", n)
+			}
 			break
 		}
 		if err != nil {
