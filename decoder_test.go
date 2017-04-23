@@ -2,7 +2,6 @@ package hexenc_test
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -12,52 +11,6 @@ import (
 
 	"github.com/dolmen-go/hexenc"
 )
-
-func readAllByChunks(r io.Reader, expected int, chunks []int) error {
-	max := 0
-	for _, c := range chunks {
-		if c > max {
-			max = c
-		}
-	}
-	if max == 0 {
-		chunks = []int{expected}
-		max = expected
-	}
-
-	b := make([]byte, max)
-	i := 0
-	for expected > 0 {
-		b = b[:chunks[i]]
-		if len(b) > expected {
-			b = b[:expected]
-		}
-		n, err := r.Read(b)
-		expected -= n
-		if err == io.EOF {
-			if expected != 0 {
-				return fmt.Errorf("EOF but expecting %d more bytes", expected)
-			}
-			// Try again: this should give the same error
-			n, err := r.Read(b)
-			if err != io.EOF {
-				return fmt.Errorf("Got EOF once, but not twice: %v", err)
-			}
-			if n != 0 {
-				return fmt.Errorf("After EOF n should be 0 but is %d", n)
-			}
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("Unexpected read error: %s", err)
-		}
-		if n == 0 && len(b) > 0 {
-			return errors.New("Read error: got 0 bytes")
-		}
-		i = (i + 1) % len(chunks)
-	}
-	return nil
-}
 
 type ChunkedReader struct {
 	r       io.Reader
@@ -132,8 +85,21 @@ func TestDecoder(t *testing.T) {
 			continue
 		}
 
+		dec = hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
+		b = make([]byte, len(data))
+		n, err = dec.Read(b)
+		if err != nil && err != io.EOF {
+			t.Errorf("Read error: %s", err)
+			continue
+		}
+		if !bytes.Equal(b, data) {
+			t.Errorf("Decode failure: %x != %x", b, data)
+			continue
+		}
+
 		if test.sizes != nil {
 			// Feed decoder with incomplete chunks
+			t.Logf("Feed decoder by chunks %v", test.sizes)
 			dec = hexenc.Encoding{}.NewDecoder(NewChunkedReader(bytes.NewReader(hexData), test.sizes))
 			b, err = ioutil.ReadAll(dec)
 			if err != nil {
@@ -144,19 +110,18 @@ func TestDecoder(t *testing.T) {
 				t.Errorf("Decode failure: %x != %x", b, data)
 				continue
 			}
-		}
 
-		dec = hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
-		buf = &bytes.Buffer{}
-		t.Logf("Read by chunks %v", test.sizes)
-		err = readAllByChunks(io.TeeReader(dec, buf), len(data), test.sizes)
-		if err != nil {
-			t.Errorf("Read error: %s", err)
-			continue
-		}
-		if !bytes.Equal(buf.Bytes(), data) {
-			t.Errorf("Decode failure: %x != %x", buf.Bytes(), data)
-			continue
+			t.Logf("Read from decoder by chunks %v", test.sizes)
+			dec = hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
+			b, err = ioutil.ReadAll(NewChunkedReader(dec, test.sizes))
+			if err != nil {
+				t.Errorf("Read error: %s", err)
+				continue
+			}
+			if !bytes.Equal(b, data) {
+				t.Errorf("Decode failure: %x != %x", buf.Bytes(), data)
+				continue
+			}
 		}
 	}
 }
