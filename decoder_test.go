@@ -57,6 +57,25 @@ func readAllByChunks(r io.Reader, expected int, chunks []int) error {
 	return nil
 }
 
+type ChunkedReader struct {
+	r       io.Reader
+	current int
+	sizes   []int
+}
+
+func (r *ChunkedReader) Read(b []byte) (n int, err error) {
+	size := r.sizes[r.current]
+	r.current = (r.current + 1) % len(r.sizes)
+	if len(b) > size {
+		b = b[:size]
+	}
+	return r.r.Read(b)
+}
+
+func NewChunkedReader(r io.Reader, sizes []int) *ChunkedReader {
+	return &ChunkedReader{r: r, sizes: sizes}
+}
+
 func TestDecoder(t *testing.T) {
 	for _, test := range []struct {
 		size  int
