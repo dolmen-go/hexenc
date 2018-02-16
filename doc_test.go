@@ -7,17 +7,27 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path"
+	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/dolmen-go/hexenc"
 )
 
 // TestDoc compares our doc with the reference in package encoding/hex.
 func TestDoc(t *testing.T) {
+	typ := reflect.TypeOf(hexenc.Encoding{})
+	pkgPath := typ.PkgPath()
+	name := typ.Name()
+
 	filter := func(info os.FileInfo) bool {
 		return !strings.HasSuffix(info.Name(), "_test.go")
 	}
 
+	// Parse sources of this package
 	pkgs, err := parser.ParseDir(token.NewFileSet(), ".", filter, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
@@ -25,20 +35,23 @@ func TestDoc(t *testing.T) {
 
 	methodsDoc := make(map[string]string)
 
-	p := doc.New(pkgs["hexenc"], ".", 0)
+	p := doc.New(pkgs[path.Base(pkgPath)], pkgPath, 0)
 
 	for _, t := range p.Types {
-		if t.Name != "Encoding" {
+		if t.Name != name {
 			continue
 		}
 		for _, meth := range t.Methods {
 			methodsDoc[meth.Name] = meth.Doc
 		}
+		break
 	}
 
-	pkgs = nil
-
-	pkgs, err = parser.ParseDir(token.NewFileSet(), runtime.GOROOT()+"/src/encoding/hex", filter, parser.ParseComments)
+	// Parse sources of encoding/hex
+	pkgs, err = parser.ParseDir(
+		token.NewFileSet(),
+		filepath.Join(runtime.GOROOT(), "src", "encoding", "hex"),
+		filter, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
