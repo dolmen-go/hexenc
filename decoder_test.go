@@ -73,6 +73,8 @@ func TestDecoder(t *testing.T) {
 
 		hexData := buf.Bytes()
 
+		// Try to read the whole stream in one Read call.
+		// My encoder can do it, but the one from stdlib (in go1.10) doesn't.
 		dec := hexenc.Encoding{}.NewDecoder(bytes.NewReader(hexData))
 		b := make([]byte, len(data))
 		n, err = dec.Read(b)
@@ -80,8 +82,11 @@ func TestDecoder(t *testing.T) {
 			t.Errorf("Read error: %s", err)
 			continue
 		}
-		if n != len(data) || !bytes.Equal(b, data) {
-			t.Errorf("Decode failure: %x != %x", b, data)
+		if n != len(b) {
+			t.Logf("Incomplete read: got %d bytes, expected %d", n, len(b))
+		}
+		if !bytes.Equal(b[:n], data[:n]) {
+			t.Errorf("Decode failure: %x != %x", b[:n], data[:n])
 			continue
 		}
 
