@@ -41,11 +41,9 @@ func (Encoding) NewEncoder(w io.Writer) io.Writer {
 }
 
 type decoder struct {
-	err     error
-	readErr error
-	r       io.Reader
-	buf     [1024]byte
-	nbuf    int
+	err error
+	r   io.Reader
+	buf [1024]byte
 }
 
 func (d *decoder) Read(p []byte) (n int, err error) {
