@@ -11,10 +11,21 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"reflect"
 	"testing"
 
 	"github.com/dolmen-go/hexenc"
 )
+
+// TestEncoderInfo shows if the package is built with the builtin encoder
+// or with the go1.10+ stdlib encoder.
+//
+//    go test -v -run TestEncoderInfo
+//    go test -v -run TestEncoderInfo -tags builtinencoder
+func TestEncoderInfo(t *testing.T) {
+	t.Log("Encoder package:", reflect.TypeOf(hexenc.Encoding{}.NewEncoder(&bytes.Buffer{})).Elem().PkgPath())
+	t.Log("Decoder package:", reflect.TypeOf(hexenc.Encoding{}.NewDecoder(&bytes.Buffer{})).Elem().PkgPath())
+}
 
 type ChunkedReader struct {
 	r       io.Reader
