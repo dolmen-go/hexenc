@@ -1,3 +1,8 @@
+// This test uses rand.Read which only appeared with go 1.6
+// FIXME remove this dependency
+//
+//+build go1.6
+
 package hexenc_test
 
 import (
