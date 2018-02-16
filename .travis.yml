@@ -17,7 +17,7 @@ go:
 
 before_install:
 # "go get" supports "-t" only from go1.2
-- go get $( [[ `go version` != *go1.1.* ]] && echo "-t" ) -v ./...
+- go get $( [[ `go version` != *' go1.1 '* ]] && echo "-t" ) -v ./...
 
 script:
 - go test -coverprofile=coverage.txt -covermode=atomic
