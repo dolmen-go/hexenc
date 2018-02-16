@@ -21,6 +21,8 @@ before_install:
 
 script:
 - go test -coverprofile=coverage.txt -covermode=atomic
+# If go >= 1.10, also test my own encoder
+- "if [[ `go version` = *' go1.'[0-9][^.\\ ]' '* ]]; then go test -tags builtinencoder; fi"
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
