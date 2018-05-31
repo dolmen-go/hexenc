@@ -15,7 +15,10 @@ go:
 # https://travis-ci.org/dolmen-go/hexenc/jobs/342255514
 # - "1.0"
 
+go_import_path: github.com/dolmen-go/hexenc
+
 before_install:
+- go list
 # "go get" supports "-t" only from go1.2
 - go get $( [[ `go version` != *' go1.1 '* ]] && echo "-t" ) -v ./...
 
