@@ -2,8 +2,9 @@
 language: go
 go:
 - tip
+- 1.11.x
 - 1.10.x
-- "1.9"
+- 1.9.x
 - "1.8"
 - "1.7"
 - "1.6"
@@ -16,12 +17,19 @@ go:
 # https://travis-ci.org/dolmen-go/hexenc/jobs/342255514
 # - "1.0"
 
+env:
+  global:
+  - GO111MODULE=on
+
 go_import_path: github.com/dolmen-go/hexenc
 
 before_install:
 - go list
-# "go get" supports "-t" only from go1.2
-- go get $( [[ `go version` != *' go1.1 '* ]] && echo "-t" ) -v ./...
+# Fetch dependencies, including test dependencies:
+# - go 1.1:        "go get -v ./..."
+# - go 1.2 - 1.10: "go get -t -v ./..."
+# - go 1.11:       "go list -test -mod=readonly"
+- "case \"$(go version)\" in (*' go1.1'[1-9][.\\ ]*) go list -test -mod=readonly ;; (*' go1.1 '*) go get ./... ;; (*) go get -t ./... ;; esac"
 
 script:
 - go test -coverprofile=coverage.txt -covermode=atomic
