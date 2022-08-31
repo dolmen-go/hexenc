@@ -1,7 +1,8 @@
 // This test uses rand.Read which only appeared with go 1.6
 // FIXME remove this dependency
 //
-//+build go1.6
+//go:build go1.6
+// +build go1.6
 
 package hexenc_test
 
@@ -20,8 +21,8 @@ import (
 // TestEncoderInfo shows if the package is built with the builtin encoder
 // or with the go1.10+ stdlib encoder.
 //
-//    go test -v -run TestEncoderInfo
-//    go test -v -run TestEncoderInfo -tags builtinencoder
+//	go test -v -run TestEncoderInfo
+//	go test -v -run TestEncoderInfo -tags builtinencoder
 func TestEncoderInfo(t *testing.T) {
 	t.Log("Encoder package:", reflect.TypeOf(hexenc.Encoding{}.NewEncoder(&bytes.Buffer{})).Elem().PkgPath())
 	t.Log("Decoder package:", reflect.TypeOf(hexenc.Encoding{}.NewDecoder(&bytes.Buffer{})).Elem().PkgPath())

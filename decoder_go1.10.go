@@ -1,4 +1,5 @@
-//+build go1.10,!builtinencoder
+//go:build go1.10 && !builtinencoder
+// +build go1.10,!builtinencoder
 
 package hexenc
 

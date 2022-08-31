@@ -1,6 +1,7 @@
 // base64.RawStdEncoding appears with go 1.5
 //
-//+build go1.5
+//go:build go1.5
+// +build go1.5
 
 package hexenc
 
