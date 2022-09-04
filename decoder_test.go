@@ -1,4 +1,4 @@
-// This test uses rand.Read which only appeared with go 1.6
+// This test uses [rand.Read] which only appeared with go 1.6
 // FIXME remove this dependency
 //
 //go:build go1.6
